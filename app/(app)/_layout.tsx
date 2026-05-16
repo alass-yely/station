@@ -1,77 +1,54 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Redirect, Tabs } from 'expo-router';
-import { FullscreenLoading } from '../../src/components/ui/fullscreen-loading';
-import { useAuth } from '../../src/lib/auth/auth-context';
-import { colors } from '../../src/theme';
+import { Ionicons } from "@expo/vector-icons";
+import { Redirect, Tabs } from "expo-router";
+import { useAuth } from "@/lib/auth/auth-context";
+import { FullscreenLoading } from "@/components/ui/fullscreen-loading";
+import { colors, iconSizes } from "@/theme";
 
 export default function AppLayout() {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) {
-    return <FullscreenLoading message="Chargement de votre espace chauffeur..." />;
-  }
-
-  if (!isAuthenticated) {
-    return <Redirect href="/login" />;
-  }
+  if (isLoading) return <FullscreenLoading message="Chargement de l'espace station..." />;
+  if (!isAuthenticated) return <Redirect href="/login" />;
 
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: colors.surface },
-        headerShadowVisible: false,
-        headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
-        tabBarActiveTintColor: colors.primary,
+        headerShown: false,
+        tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          height: 68,
-          paddingTop: 6,
-          paddingBottom: 8,
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
+        tabBarLabelStyle: { fontWeight: "700", fontSize: 12 },
+        tabBarStyle: { height: 68, paddingBottom: 8, paddingTop: 8 }
       }}
     >
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Accueil',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+          title: "Accueil",
+          tabBarIcon: ({ color }) => <Ionicons name="home" color={color} size={iconSizes.tab} />
+        }}
+      />
+      <Tabs.Screen
+        name="scan"
+        options={{
+          title: "Scanner",
+          tabBarIcon: ({ color }) => <Ionicons name="scan-circle" color={color} size={iconSizes.tabScan} />
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
-          title: 'Historique',
-          tabBarIcon: ({ color, size }) => <Ionicons name="swap-horizontal-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="cashback"
-        options={{
-          title: 'Cashback',
-          tabBarIcon: ({ color, size }) => <Ionicons name="wallet-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="referrals"
-        options={{
-          title: 'Reseau',
-          tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
+          title: "Historique",
+          tabBarIcon: ({ color }) => <Ionicons name="time" color={color} size={iconSizes.tab} />
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
+          title: "Profil",
+          tabBarIcon: ({ color }) => <Ionicons name="person" color={color} size={iconSizes.tab} />
         }}
       />
+      <Tabs.Screen name="transaction/new" options={{ href: null }} />
     </Tabs>
   );
 }

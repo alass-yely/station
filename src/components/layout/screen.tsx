@@ -1,45 +1,33 @@
-import { ReactNode } from 'react';
-import { ScrollView, ScrollViewProps, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing } from '../../theme';
+import { PropsWithChildren } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { colors, spacing } from "@/theme";
 
-type ScreenProps = {
-  children: ReactNode;
+type ScreenProps = PropsWithChildren<{
   scrollable?: boolean;
-  refreshControl?: ScrollViewProps['refreshControl'];
-};
+}>;
 
-export function Screen({ children, scrollable = true, refreshControl }: ScreenProps) {
+export const Screen = ({ children, scrollable = false }: ScreenProps) => {
   const content = <View style={styles.content}>{children}</View>;
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-      {scrollable ? (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={refreshControl}
-        >
-          {content}
-        </ScrollView>
-      ) : (
-        content
-      )}
+    <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
+      {scrollable ? <ScrollView contentContainerStyle={styles.scrollContent}>{content}</ScrollView> : content}
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background
   },
   scrollContent: {
-    flexGrow: 1,
+    paddingBottom: spacing.xl
   },
   content: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.md,
-  },
+    padding: spacing.md,
+    gap: spacing.md
+  }
 });

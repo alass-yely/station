@@ -1,128 +1,114 @@
-import { Link, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
-import { Screen } from '../../src/components/layout/screen';
-import { Button } from '../../src/components/ui/button';
-import { Card } from '../../src/components/ui/card';
-import { Input } from '../../src/components/ui/input';
-import { YelyLogo } from '../../src/components/ui/yely-logo';
-import { useAuth } from '../../src/lib/auth/auth-context';
-import {
-  isValidPhone,
-  normalizePhoneForApi,
-  sanitizePhoneInput,
-} from '../../src/lib/utils/phone';
-import { ApiError } from '../../src/types/api';
-import { colors, spacing, typography } from '../../src/theme';
-
-function normalizePin(value: string) {
-  return value.replace(/\D/g, '').slice(0, 4);
-}
+import { useState } from "react";
+import { Redirect } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
+import { AppHeader } from "@/components/layout/app-header";
+import { Screen } from "@/components/layout/screen";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { InlineToast } from "@/components/ui/inline-toast";
+import { useAuth } from "@/lib/auth/auth-context";
+import { normalizePhoneForApi, sanitizePhoneInput, isValidPhone } from "@/lib/utils/phone";
+import { colors, spacing, typography } from "@/theme";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login } = useAuth();
-
-  const [phone, setPhone] = useState('');
-  const [pin, setPin] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, isAuthenticated } = useAuth();
+  const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const phoneError = useMemo(() => {
-    if (!phone) return null;
-    return isValidPhone(phone) ? null : 'Numero invalide';
-  }, [phone]);
+  if (isAuthenticated) {
+    return <Redirect href="/dashboard" />;
+  }
 
-  const pinError = useMemo(() => {
-    if (!pin) return null;
-    return normalizePin(pin).length !== 4 ? 'Le PIN doit contenir 4 chiffres.' : null;
-  }, [pin]);
-
-  async function onSubmit() {
+  const onSubmit = async () => {
     setError(null);
 
-    const cleanPhone = normalizePhoneForApi(phone);
-    const cleanPin = normalizePin(pin);
+    const normalizedPhone = normalizePhoneForApi(phone);
+    const normalizedPin = pin.trim();
 
-    if (!cleanPhone) {
-      setError('Le telephone est obligatoire.');
+    if (!normalizedPhone) {
+      setError("Le téléphone est obligatoire.");
       return;
     }
 
-    if (!isValidPhone(cleanPhone)) {
-      setError('Numero invalide.');
+    if (!isValidPhone(normalizedPhone)) {
+      setError("Numéro de téléphone invalide.");
       return;
     }
 
-    if (cleanPin.length !== 4) {
-      setError('Le PIN doit contenir 4 chiffres.');
+    if (!normalizedPin) {
+      setError("Le PIN est obligatoire.");
+      return;
+    }
+
+    if (!/^\d{4}$/.test(normalizedPin)) {
+      setError("Le PIN doit contenir exactement 4 chiffres.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await login({ phone: cleanPhone, pin: cleanPin });
-      router.replace('/dashboard');
-    } catch (e) {
-      const apiError = e as ApiError;
-      setError(apiError?.message || 'Connexion impossible. Verifiez vos informations.');
+      await login({
+        phone: normalizedPhone,
+        pin: normalizedPin
+      });
+    } catch (submitError) {
+      const message = submitError instanceof Error ? submitError.message : "Échec de la connexion.";
+      setError(message || "Échec de la connexion.");
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <Screen>
-      <YelyLogo size="md" withSubtitle />
-      <Text style={styles.title}>Connexion chauffeur</Text>
-      <Card subtitle="Entrez vos informations pour acceder a votre espace.">
-        <Input
-          label="Telephone"
-          keyboardType="phone-pad"
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="telephoneNumber"
-          placeholder="Ex: +2250700000000"
-          value={phone}
-          onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
-          error={phoneError ?? undefined}
-        />
-        <Input
-          label="PIN (4 chiffres)"
-          keyboardType="numeric"
-          secureTextEntry
-          placeholder="••••"
-          value={pin}
-          onChangeText={(value) => setPin(normalizePin(value))}
-          maxLength={4}
-          error={pinError ?? undefined}
-        />
+      <AppHeader
+        title="Connexion station"
+        subtitle="Connectez-vous avec votre compte caissier ou manager."
+      />
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+      <Card>
+        <View style={styles.inputGroup}>
+          <Input
+            label="Téléphone"
+            placeholder="Ex: 0700000000"
+            value={phone}
+            onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
+            keyboardType="phone-pad"
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="telephoneNumber"
+          />
 
-        <Button
-          label={isSubmitting ? 'Connexion en cours...' : 'Se connecter'}
-          onPress={onSubmit}
-          disabled={isSubmitting}
-        />
+          <Input
+            label="PIN"
+            placeholder="••••"
+            value={pin}
+            onChangeText={(value) => setPin(value.replace(/\D/g, ""))}
+            keyboardType="number-pad"
+            secureTextEntry
+            maxLength={4}
+            textContentType="password"
+          />
+        </View>
+
+        {error ? <InlineToast message={error} type="error" /> : null}
+        <Button label={isSubmitting ? "Connexion..." : "Se connecter"} onPress={() => void onSubmit()} disabled={isSubmitting} />
       </Card>
 
-      <Link href="/register" asChild>
-        <Button label="Creer un compte chauffeur" variant="ghost" onPress={() => undefined} />
-      </Link>
+      <Text style={styles.helpText}>Utilisez vos identifiants staff station.</Text>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: typography.titleMd,
-    fontWeight: '800',
-    color: colors.textPrimary,
+  inputGroup: {
+    gap: spacing.md
   },
-  error: {
-    color: colors.danger,
-    fontSize: typography.bodySm,
-    marginTop: spacing.xs,
-  },
+  helpText: {
+    color: colors.textMuted,
+    fontSize: typography.caption
+  }
 });

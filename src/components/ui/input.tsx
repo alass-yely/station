@@ -1,60 +1,36 @@
-import { forwardRef } from 'react';
-import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
-import { colors, spacing, typography } from '../../theme';
+import { StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
+import { colors, spacing, typography } from "@/theme";
 
 type InputProps = TextInputProps & {
   label: string;
-  hint?: string;
-  error?: string;
 };
 
-export const Input = forwardRef<TextInput, InputProps>(function Input(
-  { label, hint, error, ...props },
-  ref,
-) {
+export const Input = ({ label, ...props }: InputProps) => {
   return (
-    <View style={styles.wrapper}>
+    <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        ref={ref}
-        placeholderTextColor={colors.textMuted}
-        style={[styles.input, error ? styles.inputError : null]}
-        {...props}
-      />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {!error && hint ? <Text style={styles.hint}>{hint}</Text> : null}
+      <TextInput placeholderTextColor={colors.textMuted} style={styles.input} {...props} />
     </View>
   );
-});
+};
 
 const styles = StyleSheet.create({
-  wrapper: {
-    gap: spacing.xs,
+  container: {
+    gap: spacing.xs
   },
   label: {
-    fontSize: typography.bodySm,
-    color: colors.textPrimary,
-    fontWeight: '600',
+    color: colors.text,
+    fontSize: typography.caption,
+    fontWeight: "600"
   },
   input: {
-    minHeight: 52,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: 12,
     backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 50,
     paddingHorizontal: spacing.md,
-    fontSize: typography.body,
-    color: colors.textPrimary,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  hint: {
-    fontSize: typography.caption,
-    color: colors.textMuted,
-  },
-  error: {
-    fontSize: typography.caption,
-    color: colors.danger,
-  },
+    color: colors.text,
+    fontSize: typography.body
+  }
 });

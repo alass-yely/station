@@ -1,24 +1,40 @@
-import { Screen } from '../layout/screen';
-import { EmptyState } from './empty-state';
-import { Button } from './button';
+import { StyleSheet, Text, View } from "react-native";
+import { colors, spacing, typography } from "@/theme";
+import { Button } from "./button";
 
-type FullscreenErrorProps = {
-  title: string;
-  message: string;
-  retryLabel?: string;
-  onRetry?: () => void;
-};
-
-export function FullscreenError({
-  title,
+export const FullscreenError = ({
   message,
-  retryLabel = 'Reessayer',
-  onRetry,
-}: FullscreenErrorProps) {
-  return (
-    <Screen scrollable={false}>
-      <EmptyState title={title} message={message} emoji="!" />
-      {onRetry ? <Button label={retryLabel} onPress={onRetry} /> : null}
-    </Screen>
-  );
-}
+  actionLabel,
+  onAction
+}: {
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) => (
+  <View style={styles.container}>
+    <Text style={styles.title}>Oups</Text>
+    <Text style={styles.message}>{message}</Text>
+    {actionLabel && onAction ? <Button label={actionLabel} onPress={onAction} /> : null}
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+    padding: spacing.lg,
+    gap: spacing.sm
+  },
+  title: {
+    color: colors.danger,
+    fontSize: typography.title,
+    fontWeight: "800"
+  },
+  message: {
+    color: colors.textMuted,
+    fontSize: typography.body,
+    textAlign: "center"
+  }
+});

@@ -1,28 +1,21 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '../../theme';
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { colors, spacing, typography } from "@/theme";
 
-type LoadingStateProps = {
-  message?: string;
-};
-
-export function LoadingState({ message = 'Chargement...' }: LoadingStateProps) {
-  return (
-    <View style={styles.container}>
-      <ActivityIndicator size="small" color={colors.primary} />
-      <Text style={styles.message}>{message}</Text>
-    </View>
-  );
-}
+export const LoadingState = ({ message = "Chargement..." }: { message?: string }) => (
+  <View style={styles.container}>
+    <ActivityIndicator color={colors.primary} />
+    <Text style={styles.message}>{message}</Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
   },
   message: {
-    fontSize: typography.bodySm,
-    color: colors.textSecondary,
-  },
+    color: colors.textMuted,
+    fontSize: typography.body
+  }
 });

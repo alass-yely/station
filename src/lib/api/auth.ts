@@ -1,81 +1,66 @@
-import {
-  DriverRegisterRequest,
-  DriverRegisterResponse,
-  LoginRequest,
-  LoginResponse,
-  User,
-} from '../../types/auth';
-import { ApiError } from '../../types/api';
-import { request } from './client';
+import { apiRequest } from "@/lib/api/client";
+import { LoginRequest, LoginResponse, StationStaffUser } from "@/types/auth";
 
-function pickAuthPayload(payload: unknown): Partial<LoginResponse> {
-  if (!payload || typeof payload !== 'object') {
-    return {};
-  }
+type UnknownRecord = Record<string, unknown>;
 
-  const root = payload as Record<string, unknown>;
-  const nested =
-    (root.data && typeof root.data === 'object' ? (root.data as Record<string, unknown>) : null) ??
-    (root.result && typeof root.result === 'object'
-      ? (root.result as Record<string, unknown>)
-      : null);
+const asRecord = (value: unknown): UnknownRecord =>
+  typeof value === "object" && value !== null ? (value as UnknownRecord) : {};
 
-  const source = nested ?? root;
+const asString = (value: unknown): string => (typeof value === "string" ? value : "");
+
+const mapUser = (rawUser: unknown): StationStaffUser => {
+  const user = asRecord(rawUser);
+  const station = asRecord(user.station);
+  const organization = asRecord(user.organization);
 
   return {
-    accessToken:
-      (source.accessToken as string | undefined) ??
-      (source.token as string | undefined) ??
-      (source.access_token as string | undefined),
-    refreshToken:
-      (source.refreshToken as string | undefined) ??
-      (source.refresh_token as string | undefined) ??
-      '',
-    user:
-      (source.user as User | undefined) ??
-      (source.driver as User | undefined) ??
-      (source.profile as User | undefined),
+    id: asString(user.id),
+    firstName: asString(user.firstName || user.firstname || user.givenName),
+    lastName: asString(user.lastName || user.lastname || user.familyName),
+    phone: asString(user.phone || user.phoneNumber),
+    role: asString(user.role),
+    status: asString(user.status || "ACTIVE"),
+    stationId: asString(user.stationId || station.id) || undefined,
+    organizationId: asString(user.organizationId || organization.id) || undefined
   };
-}
+};
 
-function assertAuthPayload(payload: Partial<LoginResponse>): LoginResponse {
-  if (!payload.accessToken || !payload.user?.id) {
-    const error: ApiError = {
-      status: 0,
-      message: "Reponse d'authentification invalide. Veuillez reessayer.",
-      details: payload,
-    };
-    throw error;
-  }
+const parseLoginPayload = (payload: unknown): LoginResponse => {
+  const root = asRecord(payload);
+  const data = asRecord(root.data);
 
-  return {
-    accessToken: payload.accessToken,
-    refreshToken: payload.refreshToken ?? '',
-    user: payload.user,
-  };
-}
+  const accessToken =
+    asString(root.accessToken) ||
+    asString(root.token) ||
+    asString(data.accessToken) ||
+    asString(data.token);
+  const refreshToken =
+    asString(root.refreshToken) || asString(data.refreshToken) || asString(data.refresh_token);
+  const user = mapUser(root.user || data.user);
 
-export async function loginDriver(payload: LoginRequest): Promise<LoginResponse> {
-  const raw = await request<unknown, LoginRequest>('/auth/login', {
-    method: 'POST',
-    body: payload,
-    timeoutMs: 30000,
+  return { accessToken, refreshToken, user };
+};
+
+const parseMePayload = (payload: unknown): StationStaffUser => {
+  const root = asRecord(payload);
+  const data = asRecord(root.data);
+  return mapUser(root.user || data.user || data);
+};
+
+export const loginStationStaff = async (payload: LoginRequest): Promise<LoginResponse> => {
+  const response = await apiRequest<unknown>("/auth/login", {
+    method: "POST",
+    body: payload
   });
-  return assertAuthPayload(pickAuthPayload(raw));
-}
 
-export async function registerDriver(payload: DriverRegisterRequest): Promise<DriverRegisterResponse> {
-  const raw = await request<unknown, DriverRegisterRequest>('/auth/drivers/register', {
-    method: 'POST',
-    body: payload,
-    timeoutMs: 30000,
-  });
-  return assertAuthPayload(pickAuthPayload(raw));
-}
+  return parseLoginPayload(response);
+};
 
-export async function getMe(accessToken: string): Promise<User> {
-  return request<User>('/auth/me', {
-    method: 'GET',
-    token: accessToken,
+export const getMe = async (accessToken: string): Promise<StationStaffUser> => {
+  const response = await apiRequest<unknown>("/auth/me", {
+    method: "GET",
+    token: accessToken
   });
-}
+
+  return parseMePayload(response);
+};

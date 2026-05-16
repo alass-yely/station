@@ -1,43 +1,29 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '../../theme';
+import { StyleSheet, Text, View } from "react-native";
+import { colors, spacing, typography } from "@/theme";
 
-type EmptyStateProps = {
-  title: string;
-  message: string;
-  emoji?: string;
-};
-
-export function EmptyState({ title, message, emoji }: EmptyStateProps) {
-  return (
-    <View style={styles.container}>
-      {emoji ? <Text style={styles.emoji}>{emoji}</Text> : null}
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.message}>{message}</Text>
-    </View>
-  );
-}
+export const EmptyState = ({ title, description }: { title: string; description: string }) => (
+  <View style={styles.container}>
+    <Text style={styles.title}>{title}</Text>
+    <Text style={styles.description}>{description}</Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: 14,
-    borderStyle: 'dashed',
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
     borderWidth: 1,
-    borderColor: colors.borderStrong,
+    borderRadius: 14,
     padding: spacing.lg,
-    gap: spacing.xs,
-  },
-  emoji: {
-    fontSize: 20,
+    gap: spacing.xs
   },
   title: {
-    fontSize: typography.titleSm,
-    fontWeight: '700',
-    color: colors.textPrimary,
+    color: colors.text,
+    fontSize: typography.subtitle,
+    fontWeight: "700"
   },
-  message: {
-    fontSize: typography.bodySm,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
+  description: {
+    color: colors.textMuted,
+    fontSize: typography.body
+  }
 });

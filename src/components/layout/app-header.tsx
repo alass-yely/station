@@ -1,45 +1,45 @@
-import { ReactNode, memo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '../../theme';
+import { StyleSheet, Text, View } from "react-native";
+import { colors, spacing, typography } from "@/theme";
 
 type AppHeaderProps = {
   title: string;
   subtitle?: string;
-  rightSlot?: ReactNode;
+  rightSlot?: React.ReactNode;
 };
 
-function AppHeaderComponent({ title, subtitle, rightSlot }: AppHeaderProps) {
+export const AppHeader = ({ title, subtitle, rightSlot }: AppHeaderProps) => {
   return (
-    <View style={styles.row}>
+    <View style={styles.container}>
       <View style={styles.left}>
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
-      {rightSlot}
+      {rightSlot ? <View>{rightSlot}</View> : null}
     </View>
   );
-}
-
-export const AppHeader = memo(AppHeaderComponent);
+};
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
+  container: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: spacing.md,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border
   },
   left: {
-    flex: 1,
-    gap: 2,
+    gap: 2
   },
   title: {
-    fontSize: typography.titleMd,
-    fontWeight: '800',
-    color: colors.textPrimary,
+    color: colors.text,
+    fontSize: typography.subtitle,
+    fontWeight: "700"
   },
   subtitle: {
-    fontSize: typography.bodySm,
-    color: colors.textSecondary,
-  },
+    color: colors.textMuted,
+    fontSize: typography.caption
+  }
 });

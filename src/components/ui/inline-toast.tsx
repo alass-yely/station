@@ -1,36 +1,25 @@
-import { memo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { StatusTone, statusColors, spacing, typography } from '../../theme';
+import { StyleSheet, Text, View } from "react-native";
+import { colors, spacing, typography } from "@/theme";
 
-type InlineToastProps = {
-  message: string;
-  tone?: StatusTone;
-  visible: boolean;
-};
-
-function InlineToastComponent({ message, tone = 'neutral', visible }: InlineToastProps) {
-  if (!visible) {
-    return null;
-  }
+export const InlineToast = ({ message, type = "info" }: { message: string; type?: "info" | "success" | "error" }) => {
+  const backgroundColor = type === "success" ? `${colors.success}22` : type === "error" ? `${colors.danger}22` : `${colors.info}22`;
+  const textColor = type === "success" ? colors.success : type === "error" ? colors.danger : colors.info;
 
   return (
-    <View style={[styles.box, { backgroundColor: statusColors[tone].bg, borderColor: statusColors[tone].border }]}>
-      <Text style={[styles.text, { color: statusColors[tone].text }]}>{message}</Text>
+    <View style={[styles.container, { backgroundColor }]}>
+      <Text style={[styles.text, { color: textColor }]}>{message}</Text>
     </View>
   );
-}
-
-export const InlineToast = memo(InlineToastComponent);
+};
 
 const styles = StyleSheet.create({
-  box: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+  container: {
+    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm
   },
   text: {
-    fontSize: typography.bodySm,
-    fontWeight: '600',
-  },
+    fontSize: typography.caption,
+    fontWeight: "600"
+  }
 });

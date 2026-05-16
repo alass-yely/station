@@ -1,14 +1,23 @@
-import { Screen } from '../layout/screen';
-import { LoadingState } from './loading-state';
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { colors, spacing, typography } from "@/theme";
 
-type FullscreenLoadingProps = {
-  message?: string;
-};
+export const FullscreenLoading = ({ message = "Initialisation..." }: { message?: string }) => (
+  <View style={styles.container}>
+    <ActivityIndicator size="large" color={colors.primary} />
+    <Text style={styles.message}>{message}</Text>
+  </View>
+);
 
-export function FullscreenLoading({ message }: FullscreenLoadingProps) {
-  return (
-    <Screen scrollable={false}>
-      <LoadingState message={message ?? 'Chargement...'} />
-    </Screen>
-  );
-}
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.background,
+    gap: spacing.sm
+  },
+  message: {
+    color: colors.textMuted,
+    fontSize: typography.body
+  }
+});

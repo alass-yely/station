@@ -1,27 +1,13 @@
-import { CashbackSummary } from './cashback';
-import { ReferralSummary } from './referral';
-import { RecentTransaction } from './transaction';
-
-export type DriverProfile = {
+export interface ResolvedDriver {
   id: string;
-  firstName?: string;
-  lastName?: string;
-  fullName?: string;
+  firstName: string;
+  lastName: string;
   phone: string;
-  role?: string;
-  status?: string;
   qrCodeToken?: string;
   referralCode?: string;
-};
+  status?: string;
+}
 
-export type DriverQr = {
-  token?: string;
-};
-
-export type DriverDashboardData = {
-  driver?: DriverProfile;
-  qr?: DriverQr;
-  cashback?: CashbackSummary;
-  recentTransactions?: RecentTransaction[];
-  referralSummary?: ReferralSummary;
-};
+export interface DriverResolutionResponse {
+  driver: ResolvedDriver;
+}

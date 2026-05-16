@@ -1,22 +1,12 @@
-import { Redirect, Stack } from 'expo-router';
-import { Screen } from '../../src/components/layout/screen';
-import { LoadingState } from '../../src/components/ui/loading-state';
-import { useAuth } from '../../src/lib/auth/auth-context';
+import { Redirect, Stack } from "expo-router";
+import { useAuth } from "@/lib/auth/auth-context";
+import { FullscreenLoading } from "@/components/ui/fullscreen-loading";
 
 export default function AuthLayout() {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) {
-    return (
-      <Screen scrollable={false}>
-        <LoadingState message="Verification de la session..." />
-      </Screen>
-    );
-  }
-
-  if (isAuthenticated) {
-    return <Redirect href="/dashboard" />;
-  }
+  if (isLoading) return <FullscreenLoading message="Vérification de session..." />;
+  if (isAuthenticated) return <Redirect href="/dashboard" />;
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }

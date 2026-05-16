@@ -1,94 +1,48 @@
-import { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
-import { colors, spacing, typography } from '../../theme';
+import { Pressable, StyleSheet, Text } from "react-native";
+import { colors, spacing, typography } from "@/theme";
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = "primary" | "secondary" | "danger";
 
 type ButtonProps = {
   label: string;
-  onPress: () => void;
-  variant?: ButtonVariant;
+  onPress?: () => void;
   disabled?: boolean;
-  rightSlot?: ReactNode;
+  variant?: ButtonVariant;
 };
 
-export function Button({
-  label,
-  onPress,
-  variant = 'primary',
-  disabled = false,
-  rightSlot,
-}: ButtonProps) {
+const variantStyles: Record<ButtonVariant, { bg: string; fg: string }> = {
+  primary: { bg: colors.accent, fg: colors.primaryContrast },
+  secondary: { bg: colors.primary, fg: colors.primaryContrast },
+  danger: { bg: colors.danger, fg: colors.primaryContrast }
+};
+
+export const Button = ({ label, onPress, disabled, variant = "primary" }: ButtonProps) => {
+  const palette = variantStyles[variant];
+
   return (
     <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
       disabled={disabled}
+      onPress={onPress}
       style={({ pressed }) => [
         styles.base,
-        variantStyles[variant],
-        pressed && !disabled && styles.pressed,
-        disabled && styles.disabled,
+        { backgroundColor: palette.bg, opacity: disabled ? 0.5 : pressed ? 0.85 : 1 }
       ]}
     >
-      <Text style={[styles.label, labelStyles[variant]]}>{label}</Text>
-      {rightSlot}
+      <Text style={[styles.label, { color: palette.fg }]}>{label}</Text>
     </Pressable>
   );
-}
+};
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 54,
+    minHeight: 56,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    flexDirection: 'row',
-    gap: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg
   },
   label: {
-    fontSize: typography.body,
-    fontWeight: '700',
-  },
-  pressed: {
-    opacity: 0.87,
-  },
-  disabled: {
-    opacity: 0.55,
-  },
-});
-
-const variantStyles = StyleSheet.create({
-  primary: {
-    backgroundColor: colors.primary,
-  },
-  secondary: {
-    backgroundColor: colors.primaryLight,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  ghost: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  danger: {
-    backgroundColor: colors.danger,
-  },
-});
-
-const labelStyles = StyleSheet.create({
-  primary: {
-    color: colors.primaryTextOn,
-  },
-  secondary: {
-    color: colors.primary,
-  },
-  ghost: {
-    color: colors.textPrimary,
-  },
-  danger: {
-    color: colors.primaryTextOn,
-  },
+    fontSize: typography.button,
+    fontWeight: "800"
+  }
 });

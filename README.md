@@ -1,12 +1,67 @@
-# YELY V3 - Mobile Chauffeur
+# YELY Station Mobile (MVP)
 
-Application mobile chauffeur avec Expo Router, auth reelle, Bottom Tabs, dashboard/transactions/cashback/reseau connectes, et design system UI consolide.
+Application mobile Station/Caissier pour YELY V3.
 
-## Prerequis
+## Stack
 
-- Node.js 20+
-- npm 10+
-- Expo Go compatible SDK 54
+- Expo SDK 54
+- React Native + TypeScript
+- Expo Router
+- AsyncStorage
+- Expo Camera (QR scan)
+- Expo Haptics
+- fetch API centralisee
+
+## Auth station staff
+
+- `POST /auth/login`
+- `GET /auth/me`
+
+Roles autorises cote app station:
+
+- `CASHIER`
+- `STATION_MANAGER`
+- `STATION_OWNER`
+- `YELY_ADMIN`
+
+## Flow scan -> transaction
+
+1. Scan QR chauffeur
+2. Resolution chauffeur backend
+3. Navigation vers `/transaction/new`
+4. Saisie carburant/litres/montant
+5. Creation transaction backend
+6. Affichage succes transaction
+7. Acces detail transaction ou scanner suivant
+
+## Endpoints backend utilises
+
+- Resolution chauffeur:
+  - `GET /drivers/resolve-by-qr/{qrCodeToken}`
+- Creation transaction:
+  - `POST /transactions`
+- Detail transaction:
+  - `GET /transactions/{id}`
+- Historique station (principal):
+  - `GET /station-dashboard/me/transactions`
+- Fallback historique station:
+  - `GET /stations/{id}/transactions`
+- Transactions du jour:
+  - `GET /stations/{id}/transactions/today`
+
+## Historique et details
+
+- La page `/transactions` affiche les vraies transactions avec pull-to-refresh et pagination.
+- Chaque carte transaction ouvre le detail `/transaction/[id]`.
+
+## UX terrain
+
+- Bouton "Scanner suivant" apres succes pour enchaînement rapide.
+- Haptics subtils:
+  - succes scan
+  - erreur scan
+  - transaction creee
+- Placeholder photo pompe present dans creation/detail (upload reel a venir).
 
 ## Installation
 
@@ -14,78 +69,33 @@ Application mobile chauffeur avec Expo Router, auth reelle, Bottom Tabs, dashboa
 npm install
 ```
 
-## Variables d'environnement
+## Lancement
 
 ```bash
-cp .env.example .env
+npm run start
+npm run android
+npm run ios
+npm run web
 ```
+
+## Variables d'environnement
+
+Copier `.env.example` vers `.env` puis ajuster:
 
 ```env
 EXPO_PUBLIC_API_BASE_URL=https://api.yely.tech/api/v1
 ```
 
-## Lancer
+## Scripts
 
-```bash
-npm run start
-```
-
-## Endpoints backend utilises
-
-- `POST /auth/login`
-- `POST /auth/drivers/register`
-- `GET /auth/me`
-- `GET /drivers/me/dashboard`
-- `GET /drivers/me/qr`
-- `GET /drivers/me/transactions`
-- `GET /drivers/me/cashback`
-- `GET /drivers/me/referrals/summary`
-
-## Design System consolide
-
-Composants UI reutilisables:
-
-- `StatusBadge` (`src/components/ui/status-badge.tsx`)
-- `InlineToast` (`src/components/ui/inline-toast.tsx`)
-- `FullscreenLoading` / `FullscreenError`
-- `AppHeader` (`src/components/layout/app-header.tsx`)
-- `EmptyState` harmonise
-
-Theme:
-
-- `statusColors` centralise dans `src/theme/status.ts`
-- spacing avec `tabBarOffset`
-
-## Optimisations UX/Perf
-
-- FlatList optimisees (transactions/cashback/referrals):
-- `removeClippedSubviews`
-- `initialNumToRender={8}`
-- `maxToRenderPerBatch={8}`
-- `windowSize={7}`
-- `keyboardShouldPersistTaps="handled"`
-- Badges statuts unifies et colores via `StatusBadge`.
-- Dates transaction/cashback avec heure (`formatDateTime`).
-- Timer de copie referral securise (cleanup timeout au unmount).
-
-## Reseau / Parrainage
-
-- Code parrainage visible
-- Copie via `expo-clipboard`
-- Partage via API `Share`
-- Resume bonus + liste filleuls si disponible
-- Fallback robuste quand seul le resume est renvoye
-
-## Dependances ajoutees
-
-- `react-native-qrcode-svg`
-- `react-native-svg`
-- `expo-clipboard`
+- `npm run start`
+- `npm run android`
+- `npm run ios`
+- `npm run web`
+- `npm run typecheck`
 
 ## Prochaines etapes
 
-1. App Station/Caissier
-2. Scan QR station
-3. Flux transaction station end-to-end
-4. Refresh token automatique
-5. Polish UX final cross-app
+- upload photo pompe
+- offline foundation
+- sync terrain

@@ -1,8 +1,7 @@
 export const spacing = {
   xs: 6,
   sm: 10,
-  md: 14,
-  lg: 18,
-  xl: 24,
-  tabBarOffset: 96,
+  md: 16,
+  lg: 24,
+  xl: 32
 } as const;

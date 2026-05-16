@@ -1,20 +1,22 @@
 {
   "expo": {
-    "name": "YELY Chauffeur",
-    "slug": "yely-mobile-driver",
-    "scheme": "yelydriver",
+    "name": "YELY Station",
+    "slug": "yely-mobile-station",
+    "scheme": "yelystation",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
-    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false
     },
     "android": {
-      "package": "com.yely.driver"
+      "package": "com.yely.station"
+    },
+    "web": {
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router"

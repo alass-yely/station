@@ -1,146 +1,214 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppHeader } from '../../src/components/layout/app-header';
-import { TransactionsList } from '../../src/components/transactions/transactions-list';
-import { Button } from '../../src/components/ui/button';
-import { FullscreenError } from '../../src/components/ui/fullscreen-error';
-import { FullscreenLoading } from '../../src/components/ui/fullscreen-loading';
-import { InlineToast } from '../../src/components/ui/inline-toast';
-import { getDriverTransactions } from '../../src/lib/api/drivers';
-import { useAuth } from '../../src/lib/auth/auth-context';
-import {
-  DriverTransaction,
-  DriverTransactionsResponse,
-  PaginationMeta,
-} from '../../src/types/transaction';
-import { ApiError } from '../../src/types/api';
-import { colors, spacing } from '../../src/theme';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Link, useRouter } from "expo-router";
+import { AppHeader } from "@/components/layout/app-header";
+import { Screen } from "@/components/layout/screen";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FullscreenLoading } from "@/components/ui/fullscreen-loading";
+import { FullscreenError } from "@/components/ui/fullscreen-error";
+import { TodaySummaryCard } from "@/components/station/today-summary-card";
+import { StationTransactionsList } from "@/components/transactions/station-transactions-list";
+import { useAuth } from "@/lib/auth/auth-context";
+import { getStationTransactions, getStationTransactionsToday } from "@/lib/api/stations";
+import { StationTodaySummary, StationTransactionListItem, StationTransactionsResponse } from "@/types/transaction";
+import { colors, typography } from "@/theme";
 
 const PAGE_LIMIT = 20;
 
-function hasNextPage(meta: PaginationMeta | undefined): boolean {
-  if (!meta) return false;
-  if (typeof meta.hasNextPage === 'boolean') return meta.hasNextPage;
-  if (typeof meta.page === 'number' && typeof meta.totalPages === 'number') {
-    return meta.page < meta.totalPages;
-  }
-  if (typeof meta.page === 'number' && typeof meta.limit === 'number' && typeof meta.total === 'number') {
-    return meta.page * meta.limit < meta.total;
-  }
-  return false;
-}
+const computeSummaryFromItems = (items: StationTransactionListItem[]): StationTodaySummary =>
+  items.reduce<StationTodaySummary>(
+    (acc, item) => ({
+      totalTransactions: acc.totalTransactions + 1,
+      totalAmount: acc.totalAmount + (item.amount || 0),
+      totalLiters: acc.totalLiters + (item.liters || 0),
+      totalCashbackAmount: acc.totalCashbackAmount + (item.cashbackAmount || 0)
+    }),
+    {
+      totalTransactions: 0,
+      totalAmount: 0,
+      totalLiters: 0,
+      totalCashbackAmount: 0
+    }
+  );
 
 export default function TransactionsPage() {
   const { session } = useAuth();
+  const router = useRouter();
 
-  const [transactions, setTransactions] = useState<DriverTransaction[]>([]);
-  const [meta, setMeta] = useState<PaginationMeta | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
+  const [items, setItems] = useState<StationTransactionListItem[]>([]);
+  const [summary, setSummary] = useState<StationTodaySummary | null>(null);
+  const [meta, setMeta] = useState<StationTransactionsResponse["meta"]>();
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canLoadMore = useMemo(() => hasNextPage(meta), [meta]);
+  const canLoadMore = useMemo(() => {
+    if (!meta) return false;
+    if (typeof meta.hasNextPage === "boolean") return meta.hasNextPage;
+    if (meta.page && meta.totalPages) return meta.page < meta.totalPages;
+    return false;
+  }, [meta]);
 
-  const loadTransactions = useCallback(async (page: number, mode: 'initial' | 'refresh' | 'more') => {
-    if (!session?.accessToken) return;
-
-    if (mode === 'initial') setIsLoading(true);
-    if (mode === 'refresh') setIsRefreshing(true);
-    if (mode === 'more') setIsLoadingMore(true);
-    if (mode !== 'more') setError(null);
+  const loadSummary = useCallback(async (): Promise<boolean> => {
+    if (!session?.accessToken) return false;
 
     try {
-      const response: DriverTransactionsResponse = await getDriverTransactions(session.accessToken, {
-        page,
-        limit: PAGE_LIMIT,
-      });
+      const data = await getStationTransactionsToday(session.accessToken, session.user.stationId);
+      setSummary(data);
+      return true;
+    } catch {
+      setSummary(null);
+      return false;
+    }
+  }, [session?.accessToken, session?.user.stationId]);
+
+  const loadPage = useCallback(
+    async (page: number, mode: "replace" | "append") => {
+      if (!session?.accessToken) return;
+
+      const response = await getStationTransactions(
+        session.accessToken,
+        { page, limit: PAGE_LIMIT },
+        session.user.stationId
+      );
 
       setMeta(response.meta);
-      setTransactions((prev) => (mode === 'more' ? [...prev, ...response.items] : response.items));
-    } catch (e) {
-      const apiError = e as ApiError;
-      setError(apiError?.message || "Impossible de charger l'historique.");
-    } finally {
-      if (mode === 'initial') setIsLoading(false);
-      if (mode === 'refresh') setIsRefreshing(false);
-      if (mode === 'more') setIsLoadingMore(false);
-    }
-  }, [session?.accessToken]);
+      setItems((prev) => (mode === "append" ? [...prev, ...response.items] : response.items));
 
-  useEffect(() => {
-    void loadTransactions(1, 'initial');
-  }, [loadTransactions]);
-
-  const handleRefresh = useCallback(() => {
-    void loadTransactions(1, 'refresh');
-  }, [loadTransactions]);
-
-  const handleLoadMore = useCallback(() => {
-    if (!canLoadMore || isLoadingMore) return;
-    const nextPage = (meta?.page ?? 1) + 1;
-    void loadTransactions(nextPage, 'more');
-  }, [canLoadMore, isLoadingMore, loadTransactions, meta?.page]);
-
-  if (isLoading) {
-    return <FullscreenLoading message="Chargement de l'historique..." />;
-  }
-
-  if (error && transactions.length === 0) {
-    return (
-      <FullscreenError
-        title="Erreur"
-        message={error}
-        retryLabel="Reessayer"
-        onRetry={() => void loadTransactions(1, 'initial')}
-      />
-    );
-  }
-
-  const footer = canLoadMore ? (
-    <View style={styles.footer}>
-      <Button
-        label={isLoadingMore ? 'Chargement...' : 'Charger plus'}
-        onPress={handleLoadMore}
-        disabled={isLoadingMore}
-      />
-    </View>
-  ) : (
-    <View style={styles.footerSpacing} />
+      return response;
+    },
+    [session?.accessToken, session?.user.stationId]
   );
 
+  const loadInitial = useCallback(async () => {
+    if (!session?.accessToken) {
+      setError("Session invalide. Reconnectez-vous.");
+      setIsInitialLoading(false);
+      return;
+    }
+
+    setError(null);
+    setIsInitialLoading(true);
+
+    try {
+      const response = await loadPage(1, "replace");
+      const hasServerSummary = await loadSummary();
+      if (!hasServerSummary && response?.items) {
+        setSummary(computeSummaryFromItems(response.items));
+      }
+    } catch (loadError) {
+      const message = loadError instanceof Error ? loadError.message : "Impossible de charger les transactions.";
+      setError(message || "Impossible de charger les transactions.");
+    } finally {
+      setIsInitialLoading(false);
+    }
+  }, [loadPage, loadSummary, session?.accessToken]);
+
+  useEffect(() => {
+    void loadInitial();
+  }, [loadInitial]);
+
+  const onRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    setError(null);
+
+    try {
+      const response = await loadPage(1, "replace");
+      const hasServerSummary = await loadSummary();
+      if (!hasServerSummary && response?.items) {
+        setSummary(computeSummaryFromItems(response.items));
+      }
+    } catch (refreshError) {
+      const message = refreshError instanceof Error ? refreshError.message : "Impossible d'actualiser.";
+      setError(message || "Impossible d'actualiser.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, loadPage, loadSummary]);
+
+  const onLoadMore = useCallback(async () => {
+    if (isLoadingMore || !canLoadMore) return;
+
+    const nextPage = (meta?.page || 1) + 1;
+    setIsLoadingMore(true);
+
+    try {
+      await loadPage(nextPage, "append");
+    } catch (loadMoreError) {
+      const message = loadMoreError instanceof Error ? loadMoreError.message : "Impossible de charger plus.";
+      setError(message || "Impossible de charger plus.");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [canLoadMore, isLoadingMore, loadPage, meta?.page]);
+
+  if (isInitialLoading) {
+    return <FullscreenLoading message="Chargement des transactions..." />;
+  }
+
+  if (error && items.length === 0) {
+    return <FullscreenError message={error} actionLabel="Réessayer" onAction={() => void loadInitial()} />;
+  }
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <Screen>
       <View style={styles.headerWrap}>
-        <AppHeader title="Historique" subtitle="Retrouvez toutes vos transactions recentes." />
-        <InlineToast message={error ?? ''} tone="danger" visible={Boolean(error && transactions.length > 0)} />
+        <AppHeader title="Historique" subtitle="Transactions station" />
       </View>
-      <TransactionsList
-        transactions={transactions}
-        refreshing={isRefreshing}
-        onRefresh={handleRefresh}
-        footer={footer}
-      />
-    </SafeAreaView>
+
+      {summary ? (
+        <View style={styles.summaryWrap}>
+          <TodaySummaryCard summary={summary} />
+        </View>
+      ) : null}
+
+      {items.length === 0 ? (
+        <View style={styles.emptyWrap}>
+          <EmptyState
+            title="Aucune transaction"
+            description="Aucune transaction trouvée pour cette station pour le moment."
+          />
+          <Link href="/transaction/new" asChild>
+            <Button label="Nouvelle transaction" />
+          </Link>
+        </View>
+      ) : (
+        <StationTransactionsList
+          items={items}
+          refreshing={isRefreshing}
+          onRefresh={() => void onRefresh()}
+          canLoadMore={canLoadMore && !isLoadingMore}
+          onLoadMore={() => void onLoadMore()}
+          onPressItem={(item) => router.push(`/transaction/${item.id}` as never)}
+        />
+      )}
+
+      {error && items.length > 0 ? <Text style={styles.inlineError}>{error}</Text> : null}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   headerWrap: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    gap: spacing.xs,
+    paddingHorizontal: 16,
+    paddingTop: 16
   },
-  footer: {
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.lg,
+  summaryWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 8
   },
-  footerSpacing: {
-    height: spacing.lg,
+  emptyWrap: {
+    flex: 1,
+    padding: 16,
+    gap: 12
   },
+  inlineError: {
+    color: colors.danger,
+    fontSize: typography.caption,
+    paddingHorizontal: 16,
+    paddingBottom: 8
+  }
 });

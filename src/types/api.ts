@@ -1,17 +1,10 @@
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export interface ApiErrorShape {
+  message?: string;
+  error?: string;
+  code?: string;
+}
 
-export type ApiRequestOptions<TBody = unknown> = {
-  method?: HttpMethod;
-  body?: TBody;
-  token?: string;
-  headers?: HeadersInit;
-  signal?: AbortSignal;
-  timeoutMs?: number;
-};
-
-export type ApiError = {
-  status: number;
-  message: string;
-  details?: unknown;
-  responseText?: string;
-};
+export interface ApiSuccess<T> {
+  data: T;
+  message?: string;
+}

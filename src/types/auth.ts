@@ -1,41 +1,42 @@
-export type UserRole = 'driver' | string;
-export type UserStatus = 'active' | 'inactive' | 'blocked' | string;
+export type UserRole =
+  | "CASHIER"
+  | "STATION_MANAGER"
+  | "STATION_OWNER"
+  | "YELY_ADMIN"
+  | Lowercase<"CASHIER" | "STATION_MANAGER" | "STATION_OWNER" | "YELY_ADMIN">
+  | string;
 
-export type User = {
+export type UserStatus =
+  | "ACTIVE"
+  | "INACTIVE"
+  | "SUSPENDED"
+  | Lowercase<"ACTIVE" | "INACTIVE" | "SUSPENDED">
+  | string;
+
+export interface StationStaffUser {
   id: string;
   firstName: string;
   lastName: string;
   phone: string;
   role: UserRole;
   status: UserStatus;
-};
+  stationId?: string;
+  organizationId?: string;
+}
 
-export type DriverSession = {
+export interface StationSession {
   accessToken: string;
   refreshToken: string;
-  user: User;
-};
+  user: StationStaffUser;
+}
 
-export type LoginRequest = {
+export interface LoginRequest {
   phone: string;
   pin: string;
-};
+}
 
-export type LoginResponse = {
+export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
-  user: User;
-};
-
-export type DriverRegisterRequest = {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  pin: string;
-  referralCode?: string;
-  referral?: string;
-  affiliationCode?: string;
-  aff?: string;
-};
-
-export type DriverRegisterResponse = LoginResponse;
+  user: StationStaffUser;
+}
