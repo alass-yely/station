@@ -1,101 +1,99 @@
-# YELY Station Mobile (MVP)
+# YELY Station Mobile (V3)
 
-Application mobile Station/Caissier pour YELY V3.
+Application mobile terrain pour les équipes station YELY (focus `CASHIER`).
 
-## Stack
+## Fonctionnel actuel
 
-- Expo SDK 54
+Le runtime principal est opérationnel:
+
+1. Login cashier
+2. Choix pompe
+3. Ouverture/restauration de session de travail
+4. Scan QR chauffeur
+5. Création transaction + upload photo pompe
+6. Historique cashier
+7. Fermeture de service
+
+## Navigation runtime (cashier)
+
+- `Scanner`
+- `Historique`
+- `Service` (via la route pompe)
+- `Profil`
+
+Redirections:
+
+- Si `mustSelectPump=true` -> `/pump`
+- Si session ouverte -> `/scan`
+
+## Endpoints utilisés
+
+Auth et session:
+
+- `POST /auth/station/cashier/login`
+- `GET /stations/me/work-sessions/current`
+- `POST /stations/me/work-sessions/start`
+- `POST /stations/me/work-sessions/{sessionId}/close`
+
+Pompes:
+
+- `GET /stations/{stationId}/pumps`
+
+Scan et transaction:
+
+- `GET /drivers/resolve-by-qr/{qrCodeToken}`
+- `POST /uploads/pump-photo`
+- `POST /transactions`
+- `GET /transactions/{id}`
+
+Historique:
+
+- `GET /cashiers/me/transactions` (cashier)
+- `GET /station-dashboard/me/transactions` (station non-cashier)
+
+## UI / Thème YELY
+
+Identité visuelle appliquée:
+
+- Vert YELY: `#0F9D58`
+- Gris texte: `#333333`
+- Fond app: `#F7F9F8`
+
+Base thème:
+
+- `src/constants/theme.ts`
+- `src/theme/colors.ts`
+
+## Structure projet
+
+Un export d’arborescence est disponible dans:
+
+- `PROJECT_STRUCTURE.md`
+
+## Stack technique
+
+- Expo (Router)
 - React Native + TypeScript
-- Expo Router
 - AsyncStorage
-- Expo Camera (QR scan)
+- Expo Camera
+- Expo Image Picker
 - Expo Haptics
-- fetch API centralisee
 
-## Auth station staff
+## Configuration environnement
 
-- `POST /auth/login`
-- `GET /auth/me`
+1. Copier `.env.example` vers `.env`
+2. Configurer l’URL backend (ex: `EXPO_PUBLIC_API_BASE_URL`)
 
-Roles autorises cote app station:
-
-- `CASHIER`
-- `STATION_MANAGER`
-- `STATION_OWNER`
-- `YELY_ADMIN`
-
-## Flow scan -> transaction
-
-1. Scan QR chauffeur
-2. Resolution chauffeur backend
-3. Navigation vers `/transaction/new`
-4. Saisie carburant/litres/montant
-5. Creation transaction backend
-6. Affichage succes transaction
-7. Acces detail transaction ou scanner suivant
-
-## Endpoints backend utilises
-
-- Resolution chauffeur:
-  - `GET /drivers/resolve-by-qr/{qrCodeToken}`
-- Creation transaction:
-  - `POST /transactions`
-- Detail transaction:
-  - `GET /transactions/{id}`
-- Historique station (principal):
-  - `GET /station-dashboard/me/transactions`
-- Fallback historique station:
-  - `GET /stations/{id}/transactions`
-- Transactions du jour:
-  - `GET /stations/{id}/transactions/today`
-
-## Historique et details
-
-- La page `/transactions` affiche les vraies transactions avec pull-to-refresh et pagination.
-- Chaque carte transaction ouvre le detail `/transaction/[id]`.
-
-## UX terrain
-
-- Bouton "Scanner suivant" apres succes pour enchaînement rapide.
-- Haptics subtils:
-  - succes scan
-  - erreur scan
-  - transaction creee
-- Placeholder photo pompe present dans creation/detail (upload reel a venir).
-
-## Installation
+## Commandes utiles
 
 ```bash
 npm install
-```
-
-## Lancement
-
-```bash
 npm run start
 npm run android
-npm run ios
-npm run web
+npm run typecheck
 ```
 
-## Variables d'environnement
+## Notes
 
-Copier `.env.example` vers `.env` puis ajuster:
-
-```env
-EXPO_PUBLIC_API_BASE_URL=https://api.yely.tech/api/v1
-```
-
-## Scripts
-
-- `npm run start`
-- `npm run android`
-- `npm run ios`
-- `npm run web`
-- `npm run typecheck`
-
-## Prochaines etapes
-
-- upload photo pompe
-- offline foundation
-- sync terrain
+- Ce projet contient des guards runtime autour des sessions de travail pour empêcher le scan/transaction hors session ouverte.
+- L’historique cashier est mappé sur le format backend actuel (`data` tableau, montants/litres parfois en chaînes).
