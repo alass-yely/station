@@ -47,8 +47,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface
   },
   optionSelected: {
-    borderColor: colors.accent,
-    backgroundColor: "#FFF1DE"
+    borderColor: colors.primary,
+    backgroundColor: "#EAF7F0"
   },
   label: {
     color: colors.text,
@@ -56,6 +56,6 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
   labelSelected: {
-    color: colors.accent
+    color: colors.primary
   }
 });

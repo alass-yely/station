@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { ApiError } from "@/lib/api/client";
 import { Link, useRouter } from "expo-router";
 import { AppHeader } from "@/components/layout/app-header";
 import { Screen } from "@/components/layout/screen";
@@ -10,9 +11,10 @@ import { FullscreenError } from "@/components/ui/fullscreen-error";
 import { TodaySummaryCard } from "@/components/station/today-summary-card";
 import { StationTransactionsList } from "@/components/transactions/station-transactions-list";
 import { useAuth } from "@/lib/auth/auth-context";
+import { getMyCashierTransactions } from "@/lib/api/cashiers";
 import { getStationTransactions, getStationTransactionsToday } from "@/lib/api/stations";
 import { StationTodaySummary, StationTransactionListItem, StationTransactionsResponse } from "@/types/transaction";
-import { colors, typography } from "@/theme";
+import { colors, spacing } from "@/theme";
 
 const PAGE_LIMIT = 20;
 
@@ -24,17 +26,14 @@ const computeSummaryFromItems = (items: StationTransactionListItem[]): StationTo
       totalLiters: acc.totalLiters + (item.liters || 0),
       totalCashbackAmount: acc.totalCashbackAmount + (item.cashbackAmount || 0)
     }),
-    {
-      totalTransactions: 0,
-      totalAmount: 0,
-      totalLiters: 0,
-      totalCashbackAmount: 0
-    }
+    { totalTransactions: 0, totalAmount: 0, totalLiters: 0, totalCashbackAmount: 0 }
   );
 
 export default function TransactionsPage() {
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const router = useRouter();
+  const role = String(user?.role || "").toUpperCase();
+  const isCashier = role === "CASHIER";
 
   const [items, setItems] = useState<StationTransactionListItem[]>([]);
   const [summary, setSummary] = useState<StationTodaySummary | null>(null);
@@ -52,6 +51,10 @@ export default function TransactionsPage() {
   }, [meta]);
 
   const loadSummary = useCallback(async (): Promise<boolean> => {
+    if (isCashier) {
+      setSummary(null);
+      return false;
+    }
     if (!session?.accessToken) return false;
 
     try {
@@ -62,24 +65,49 @@ export default function TransactionsPage() {
       setSummary(null);
       return false;
     }
-  }, [session?.accessToken, session?.user.stationId]);
+  }, [isCashier, session?.accessToken, session?.user.stationId]);
 
   const loadPage = useCallback(
     async (page: number, mode: "replace" | "append") => {
       if (!session?.accessToken) return;
 
-      const response = await getStationTransactions(
-        session.accessToken,
-        { page, limit: PAGE_LIMIT },
-        session.user.stationId
-      );
+      const params = { page, limit: PAGE_LIMIT };
+      const response = isCashier
+        ? await getMyCashierTransactions(session.accessToken, params)
+        : await getStationTransactions(session.accessToken, params, session.user.stationId);
+
+      const normalizedItems = response.items.map((item) => {
+        const driverName =
+          "driverName" in item && typeof item.driverName === "string"
+            ? item.driverName
+            : `${item.driver?.firstName || ""} ${item.driver?.lastName || ""}`.trim() || undefined;
+        const driverPhone =
+          "driverPhone" in item && typeof item.driverPhone === "string" ? item.driverPhone : item.driver?.phone;
+
+        return {
+          id: item.id,
+          reference: item.reference,
+          driverName,
+          driverPhone,
+          driver: item.driver,
+          fuelType: item.fuelType,
+          liters: item.liters,
+          amount: item.amount,
+          cashbackAmount: item.cashbackAmount,
+          status: item.status,
+          createdAt: item.createdAt,
+          confirmedAt: item.confirmedAt,
+          pump: item.pump,
+          workSession: item.workSession
+        };
+      });
 
       setMeta(response.meta);
-      setItems((prev) => (mode === "append" ? [...prev, ...response.items] : response.items));
+      setItems((prev) => (mode === "append" ? [...prev, ...normalizedItems] : normalizedItems));
 
-      return response;
+      return { ...response, items: normalizedItems };
     },
-    [session?.accessToken, session?.user.stationId]
+    [isCashier, session?.accessToken, session?.user.stationId]
   );
 
   const loadInitial = useCallback(async () => {
@@ -95,16 +123,20 @@ export default function TransactionsPage() {
     try {
       const response = await loadPage(1, "replace");
       const hasServerSummary = await loadSummary();
-      if (!hasServerSummary && response?.items) {
+      if (!isCashier && !hasServerSummary && response?.items) {
         setSummary(computeSummaryFromItems(response.items));
       }
     } catch (loadError) {
+      if (loadError instanceof ApiError && loadError.status === 403) {
+        setError("Vous n’avez pas accès à cet historique.");
+        return;
+      }
       const message = loadError instanceof Error ? loadError.message : "Impossible de charger les transactions.";
       setError(message || "Impossible de charger les transactions.");
     } finally {
       setIsInitialLoading(false);
     }
-  }, [loadPage, loadSummary, session?.accessToken]);
+  }, [isCashier, loadPage, loadSummary, session?.accessToken]);
 
   useEffect(() => {
     void loadInitial();
@@ -118,16 +150,20 @@ export default function TransactionsPage() {
     try {
       const response = await loadPage(1, "replace");
       const hasServerSummary = await loadSummary();
-      if (!hasServerSummary && response?.items) {
+      if (!isCashier && !hasServerSummary && response?.items) {
         setSummary(computeSummaryFromItems(response.items));
       }
     } catch (refreshError) {
-      const message = refreshError instanceof Error ? refreshError.message : "Impossible d'actualiser.";
+      if (refreshError instanceof ApiError && refreshError.status === 403) {
+        setError("Vous n’avez pas accès à cet historique.");
+        return;
+      }
+      const message = refreshError instanceof Error ? refreshError.message : "Impossible d'actualiser l'historique.";
       setError(message || "Impossible d'actualiser.");
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing, loadPage, loadSummary]);
+  }, [isCashier, isRefreshing, loadPage, loadSummary]);
 
   const onLoadMore = useCallback(async () => {
     if (isLoadingMore || !canLoadMore) return;
@@ -138,42 +174,59 @@ export default function TransactionsPage() {
     try {
       await loadPage(nextPage, "append");
     } catch (loadMoreError) {
-      const message = loadMoreError instanceof Error ? loadMoreError.message : "Impossible de charger plus.";
-      setError(message || "Impossible de charger plus.");
+      const message = loadMoreError instanceof Error ? loadMoreError.message : "Impossible de charger les éléments suivants.";
+      setError(message);
     } finally {
       setIsLoadingMore(false);
     }
   }, [canLoadMore, isLoadingMore, loadPage, meta?.page]);
 
+  // Rendu de l'en-tête global de la liste (Évite les conflits de scroll)
+  const renderListHeader = useMemo(() => {
+    return (
+      <View style={styles.headerComponentContainer}>
+        <AppHeader 
+          title="Historique" 
+          subtitle={isCashier ? "Mes distributions de carburant" : "Activité globale de la station"} 
+        />
+        {summary && !isCashier && (
+          <View style={styles.summaryContainer}>
+            <TodaySummaryCard summary={summary} />
+          </View>
+        )}
+      </View>
+    );
+  }, [isCashier, summary]);
+
   if (isInitialLoading) {
-    return <FullscreenLoading message="Chargement des transactions..." />;
+    return <FullscreenLoading message="Chargement de l'historique..." />;
   }
 
   if (error && items.length === 0) {
-    return <FullscreenError message={error} actionLabel="Réessayer" onAction={() => void loadInitial()} />;
+    return <FullscreenError message={error} actionLabel="Actualiser" onAction={() => void loadInitial()} />;
   }
 
   return (
-    <Screen>
-      <View style={styles.headerWrap}>
-        <AppHeader title="Historique" subtitle="Transactions station" />
-      </View>
-
-      {summary ? (
-        <View style={styles.summaryWrap}>
-          <TodaySummaryCard summary={summary} />
-        </View>
-      ) : null}
-
+    // Note l'utilisation de scrollable={false} pour laisser la FlatList interne tout gérer de manière performante
+    <Screen scrollable={false} style={styles.root}>
       {items.length === 0 ? (
-        <View style={styles.emptyWrap}>
-          <EmptyState
-            title="Aucune transaction"
-            description="Aucune transaction trouvée pour cette station pour le moment."
-          />
-          <Link href="/transaction/new" asChild>
-            <Button label="Nouvelle transaction" />
-          </Link>
+        <View style={styles.emptyContainer}>
+          {renderListHeader}
+          <View style={styles.emptyContent}>
+            <EmptyState
+              title="Aucune opération"
+              description={
+                isCashier
+                  ? "Vous n'avez pas encore enregistré de transaction aujourd'hui."
+                  : "Aucune transaction n'a été détectée pour cette station aujourd'hui."
+              }
+            />
+            {!isCashier && (
+              <Link href="/transaction/new" asChild>
+                <Button label="Nouvelle transaction" variant="primary" />
+              </Link>
+            )}
+          </View>
         </View>
       ) : (
         <StationTransactionsList
@@ -183,32 +236,61 @@ export default function TransactionsPage() {
           canLoadMore={canLoadMore && !isLoadingMore}
           onLoadMore={() => void onLoadMore()}
           onPressItem={(item) => router.push(`/transaction/${item.id}` as never)}
+          ListHeaderComponent={renderListHeader}
+          contentContainerStyle={styles.listContent}
         />
       )}
 
-      {error && items.length > 0 ? <Text style={styles.inlineError}>{error}</Text> : null}
+      {error && items.length > 0 && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.inlineErrorText}>{error}</Text>
+        </View>
+      )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  headerWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 16
-  },
-  summaryWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 8
-  },
-  emptyWrap: {
+  root: {
     flex: 1,
-    padding: 16,
-    gap: 12
+    backgroundColor: "#F8FAFC", // Fond gris ardoise ultra-léger Fintech
   },
-  inlineError: {
-    color: colors.danger,
-    fontSize: typography.caption,
-    paddingHorizontal: 16,
-    paddingBottom: 8
+  headerComponentContainer: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    backgroundColor: "#F8FAFC",
+  },
+  summaryContainer: {
+    marginTop: spacing.md,
+  },
+  listContent: {
+    paddingBottom: 40,
+  },
+  emptyContainer: {
+    flex: 1,
+  },
+  emptyContent: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  errorBanner: {
+    position: "absolute",
+    bottom: 20,
+    left: spacing.md,
+    right: spacing.md,
+    backgroundColor: "#FEE2E2",
+    padding: spacing.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+  },
+  inlineErrorText: {
+    color: "#DC2626",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   }
 });

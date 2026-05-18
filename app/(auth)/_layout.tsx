@@ -3,10 +3,13 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { FullscreenLoading } from "@/components/ui/fullscreen-loading";
 
 export default function AuthLayout() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, mustSelectPump } = useAuth();
 
   if (isLoading) return <FullscreenLoading message="Vérification de session..." />;
-  if (isAuthenticated) return <Redirect href="/dashboard" />;
+  if (isAuthenticated) {
+    // Workaround Expo Router typed routes pour routes runtime.
+    return <Redirect href={(mustSelectPump ? "/(app)/pump" : "/(app)/scan") as never} />;
+  }
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }

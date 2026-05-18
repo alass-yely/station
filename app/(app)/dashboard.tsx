@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, Text } from "react-native";
-import { Link } from "expo-router";
+import { Link, Redirect } from "expo-router";
 import { AppHeader } from "@/components/layout/app-header";
 import { Screen } from "@/components/layout/screen";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,12 @@ import { colors, typography } from "@/theme";
 export default function DashboardPage() {
   const { user, session } = useAuth();
   const [summary, setSummary] = useState<StationTodaySummary | null>(null);
+  const role = String(user?.role || "").toUpperCase();
+  const isCashier = role === "CASHIER";
 
   useEffect(() => {
+    if (isCashier) return;
+
     const load = async () => {
       if (!session?.accessToken) return;
       try {
@@ -27,7 +31,11 @@ export default function DashboardPage() {
     };
 
     void load();
-  }, [session?.accessToken, user?.stationId]);
+  }, [isCashier, session?.accessToken, user?.stationId]);
+
+  if (isCashier) {
+    return <Redirect href="/(app)/scan" />;
+  }
 
   return (
     <Screen scrollable>
@@ -42,7 +50,7 @@ export default function DashboardPage() {
       <Card>
         <Text style={styles.title}>Scanner chauffeur</Text>
         <Text style={styles.text}>Action principale pour créer une transaction.</Text>
-        <Link href="/scan" asChild>
+        <Link href="/(app)/scan" asChild>
           <Button label="Scanner chauffeur" />
         </Link>
       </Card>
@@ -50,7 +58,7 @@ export default function DashboardPage() {
       <Card>
         <Text style={styles.title}>Historique</Text>
         <Text style={styles.text}>Consulter les transactions de la station.</Text>
-        <Link href="/transactions" asChild>
+        <Link href="/(app)/transactions" asChild>
           <Button label="Voir historique" variant="secondary" />
         </Link>
       </Card>

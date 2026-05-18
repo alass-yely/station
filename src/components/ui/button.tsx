@@ -10,10 +10,10 @@ type ButtonProps = {
   variant?: ButtonVariant;
 };
 
-const variantStyles: Record<ButtonVariant, { bg: string; fg: string }> = {
-  primary: { bg: colors.accent, fg: colors.primaryContrast },
-  secondary: { bg: colors.primary, fg: colors.primaryContrast },
-  danger: { bg: colors.danger, fg: colors.primaryContrast }
+const variantStyles: Record<ButtonVariant, { bg: string; fg: string; borderColor: string }> = {
+  primary: { bg: colors.primary, fg: colors.primaryContrast, borderColor: colors.primary },
+  secondary: { bg: colors.surface, fg: colors.text, borderColor: colors.border },
+  danger: { bg: "#FEE2E2", fg: colors.danger, borderColor: "#FCA5A5" }
 };
 
 export const Button = ({ label, onPress, disabled, variant = "primary" }: ButtonProps) => {
@@ -25,7 +25,11 @@ export const Button = ({ label, onPress, disabled, variant = "primary" }: Button
       onPress={onPress}
       style={({ pressed }) => [
         styles.base,
-        { backgroundColor: palette.bg, opacity: disabled ? 0.5 : pressed ? 0.85 : 1 }
+        {
+          backgroundColor: palette.bg,
+          borderColor: palette.borderColor,
+          opacity: disabled ? 0.5 : pressed ? 0.88 : 1
+        }
       ]}
     >
       <Text style={[styles.label, { color: palette.fg }]}>{label}</Text>
@@ -35,8 +39,9 @@ export const Button = ({ label, onPress, disabled, variant = "primary" }: Button
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 56,
+    minHeight: 50,
     borderRadius: 14,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.lg

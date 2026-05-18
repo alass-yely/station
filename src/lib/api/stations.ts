@@ -21,6 +21,8 @@ const asNumber = (value: unknown): number | undefined =>
 const mapItem = (payload: unknown): StationTransactionListItem => {
   const raw = asRecord(payload);
   const driver = asRecord(raw.driver);
+  const pump = asRecord(raw.pump);
+  const workSession = asRecord(raw.workSession);
 
   return {
     id: asString(raw.id) || "",
@@ -43,7 +45,24 @@ const mapItem = (payload: unknown): StationTransactionListItem => {
     cashbackAmount: asNumber(raw.cashbackAmount),
     status: asString(raw.status),
     createdAt: asString(raw.createdAt),
-    confirmedAt: asString(raw.confirmedAt)
+    confirmedAt: asString(raw.confirmedAt),
+    pump:
+      Object.keys(pump).length > 0
+        ? {
+            id: asString(pump.id),
+            name: asString(pump.name),
+            code: asString(pump.code)
+          }
+        : undefined,
+    workSession:
+      Object.keys(workSession).length > 0
+        ? {
+            id: asString(workSession.id),
+            status: asString(workSession.status),
+            startedAt: asString(workSession.startedAt),
+            endedAt: asString(workSession.endedAt)
+          }
+        : undefined
   };
 };
 

@@ -23,6 +23,10 @@ export const StationTransactionCard = ({
   const createdAt = item.createdAt || item.confirmedAt || "";
   const driverName = getDriverDisplayName(item);
   const driverPhone = item.driverPhone || item.driver?.phone || "-";
+  const pumpName = item.pump?.name;
+  const pumpCode = item.pump?.code;
+  const pumpLabel = pumpName && pumpCode ? `${pumpName} (${pumpCode})` : pumpName || pumpCode || "-";
+  const reference = item.reference || "-";
 
   return (
     <Pressable onPress={onPress}>
@@ -35,8 +39,10 @@ export const StationTransactionCard = ({
           />
         </View>
 
+        <Text style={styles.meta}>Référence: {reference}</Text>
         <Text style={styles.driver}>{driverName}</Text>
         <Text style={styles.meta}>Téléphone: {driverPhone}</Text>
+        <Text style={styles.meta}>Pompe: {pumpLabel}</Text>
         <Text style={styles.meta}>Carburant: {formatFuelType(item.fuelType || "-")}</Text>
         <Text style={styles.meta}>Litres: {formatLiters(item.liters || 0)}</Text>
         <Text style={styles.meta}>Cashback: {formatMoney(item.cashbackAmount || 0, "FCFA")}</Text>

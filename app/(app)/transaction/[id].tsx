@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Screen } from "@/components/layout/screen";
 import { AppHeader } from "@/components/layout/app-header";
@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { FullscreenLoading } from "@/components/ui/fullscreen-loading";
 import { FullscreenError } from "@/components/ui/fullscreen-error";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PumpPhotoPreview } from "@/components/transaction/pump-photo-preview";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getTransactionById } from "@/lib/api/transactions";
 import {
@@ -66,7 +67,13 @@ export default function TransactionDetailsPage() {
   }
 
   if (error || !item) {
-    return <FullscreenError message={error || "Transaction introuvable."} actionLabel="Réessayer" onAction={() => void load()} />;
+    return (
+      <FullscreenError
+        message={error || "Transaction introuvable."}
+        actionLabel="Réessayer"
+        onAction={() => void load()}
+      />
+    );
   }
 
   return (
@@ -76,7 +83,10 @@ export default function TransactionDetailsPage() {
       <Card>
         <View style={styles.row}>
           <Text style={styles.amount}>{formatMoney(item.amount || 0, "FCFA")}</Text>
-          <StatusBadge label={formatTransactionStatus(item.status || "pending")} status={getTransactionStatusTone(item.status)} />
+          <StatusBadge
+            label={formatTransactionStatus(item.status || "pending")}
+            status={getTransactionStatusTone(item.status)}
+          />
         </View>
         <Text style={styles.info}>Chauffeur: {item.driverName || "-"}</Text>
         <Text style={styles.info}>Téléphone: {item.driverPhone || "-"}</Text>
@@ -86,22 +96,15 @@ export default function TransactionDetailsPage() {
         <Text style={styles.info}>Créée le: {item.createdAt ? formatDateTime(item.createdAt) : "-"}</Text>
         <Text style={styles.info}>Confirmée le: {item.confirmedAt ? formatDateTime(item.confirmedAt) : "-"}</Text>
         <Text style={styles.info}>Station: {item.stationName || "-"}</Text>
+        <Text style={styles.info}>Pompe: {[item.pumpName, item.pumpCode].filter(Boolean).join(" - ") || "-"}</Text>
+        <Text style={styles.info}>Session: {item.workSessionId || "-"}</Text>
+        <Text style={styles.info}>Pompiste: {item.cashierName || "-"}</Text>
       </Card>
 
-      {item.pumpPhotoUrl ? (
-        <Card>
-          <Text style={styles.sectionTitle}>Photo pompe</Text>
-          <Image source={{ uri: item.pumpPhotoUrl }} style={styles.image} resizeMode="cover" />
-        </Card>
-      ) : (
-        <Card>
-          <Text style={styles.sectionTitle}>Photo pompe</Text>
-          <Text style={styles.info}>Non disponible</Text>
-        </Card>
-      )}
+      <PumpPhotoPreview url={item.pumpPhotoUrl} />
 
-      <Button label="Retour historique" variant="secondary" onPress={() => router.push("/transactions")} />
-      <Button label="Scanner un autre chauffeur" onPress={() => router.push("/scan")} />
+      <Button label="Retour historique" variant="secondary" onPress={() => router.push("/(app)/transactions")} />
+      <Button label="Scanner un autre chauffeur" onPress={() => router.push("/(app)/scan")} />
     </Screen>
   );
 }
@@ -117,19 +120,8 @@ const styles = StyleSheet.create({
     fontSize: typography.title,
     fontWeight: "800"
   },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: typography.subtitle,
-    fontWeight: "700"
-  },
   info: {
     color: colors.textMuted,
     fontSize: typography.body
-  },
-  image: {
-    width: "100%",
-    height: 220,
-    borderRadius: 12,
-    marginTop: 8
   }
 });

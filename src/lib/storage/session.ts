@@ -12,7 +12,8 @@ const isValidSession = (value: unknown): value is StationSession => {
       session.refreshToken &&
       session.user?.id &&
       session.user?.phone &&
-      session.user?.role
+      session.user?.role &&
+      typeof session.mustSelectPump === "boolean"
   );
 };
 

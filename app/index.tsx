@@ -1,5 +1,5 @@
 import { Link } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/components/layout/screen";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,7 @@ export default function HomePage() {
   return (
     <Screen>
       <View style={styles.hero}>
+        <Image source={require("../assets/Light-version.png")} style={styles.logo} resizeMode="contain" />
         <Text style={styles.title}>YELY Station</Text>
         <Text style={styles.subtitle}>Application caisse/station pour scanner et traiter les transactions chauffeur.</Text>
       </View>
@@ -36,6 +37,10 @@ const styles = StyleSheet.create({
     color: colors.primaryContrast,
     fontSize: typography.title,
     fontWeight: "800"
+  },
+  logo: {
+    width: 92,
+    height: 30
   },
   subtitle: {
     color: "#DDEBFF",

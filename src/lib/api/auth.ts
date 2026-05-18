@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import { LoginRequest, LoginResponse, StationStaffUser } from "@/types/auth";
+import { LoginRequest, LoginResponse, StationStaffUser, StationSummary } from "@/types/auth";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -7,6 +7,18 @@ const asRecord = (value: unknown): UnknownRecord =>
   typeof value === "object" && value !== null ? (value as UnknownRecord) : {};
 
 const asString = (value: unknown): string => (typeof value === "string" ? value : "");
+
+const mapStation = (rawStation: unknown): StationSummary | undefined => {
+  const station = asRecord(rawStation);
+  const id = asString(station.id);
+  if (!id) return undefined;
+
+  return {
+    id,
+    name: asString(station.name) || undefined,
+    stationCode: asString(station.stationCode || station.code) || undefined
+  };
+};
 
 const mapUser = (rawUser: unknown): StationStaffUser => {
   const user = asRecord(rawUser);
@@ -37,8 +49,16 @@ const parseLoginPayload = (payload: unknown): LoginResponse => {
   const refreshToken =
     asString(root.refreshToken) || asString(data.refreshToken) || asString(data.refresh_token);
   const user = mapUser(root.user || data.user);
+  const station = mapStation(root.station || data.station);
+  const mustSelectPumpRaw = root.mustSelectPump ?? data.mustSelectPump;
 
-  return { accessToken, refreshToken, user };
+  return {
+    accessToken,
+    refreshToken,
+    user,
+    station,
+    mustSelectPump: typeof mustSelectPumpRaw === "boolean" ? mustSelectPumpRaw : false
+  };
 };
 
 const parseMePayload = (payload: unknown): StationStaffUser => {
@@ -48,7 +68,7 @@ const parseMePayload = (payload: unknown): StationStaffUser => {
 };
 
 export const loginStationStaff = async (payload: LoginRequest): Promise<LoginResponse> => {
-  const response = await apiRequest<unknown>("/auth/login", {
+  const response = await apiRequest<unknown>("/auth/station/cashier/login", {
     method: "POST",
     body: payload
   });

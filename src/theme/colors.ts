@@ -1,15 +1,19 @@
+import { yelyTheme } from "@/constants/theme";
+
 export const colors = {
-  background: "#F3F5F7",
-  surface: "#FFFFFF",
-  surfaceMuted: "#E9EDF1",
-  text: "#11212D",
-  textMuted: "#4A6272",
-  primary: "#0353A4",
+  background: yelyTheme.colors.background,
+  card: yelyTheme.colors.card,
+  surface: yelyTheme.colors.card,
+  surfaceMuted: "#EEF3F0",
+  text: yelyTheme.colors.text,
+  textMuted: yelyTheme.colors.muted,
+  muted: yelyTheme.colors.muted,
+  primary: yelyTheme.colors.primary,
   primaryContrast: "#FFFFFF",
-  accent: "#F77F00",
-  border: "#D5DEE6",
-  success: "#1B7F3B",
-  warning: "#D97706",
-  danger: "#B42318",
-  info: "#0E7490"
+  accent: yelyTheme.colors.primary,
+  border: yelyTheme.colors.border,
+  success: yelyTheme.colors.primary,
+  warning: yelyTheme.colors.warning,
+  danger: yelyTheme.colors.danger,
+  info: "#1D4ED8"
 } as const;

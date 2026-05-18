@@ -3,13 +3,15 @@ import { colors, spacing, typography } from "@/theme";
 
 type InputProps = TextInputProps & {
   label: string;
+  hint?: string;
 };
 
-export const Input = ({ label, ...props }: InputProps) => {
+export const Input = ({ label, hint, ...props }: InputProps) => {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <TextInput placeholderTextColor={colors.textMuted} style={styles.input} {...props} />
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   );
 };
@@ -28,9 +30,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 50,
+    minHeight: 54,
     paddingHorizontal: spacing.md,
     color: colors.text,
-    fontSize: typography.body
+    fontSize: typography.body,
+    fontWeight: "600"
+  },
+  hint: {
+    color: colors.textMuted,
+    fontSize: typography.caption
   }
 });

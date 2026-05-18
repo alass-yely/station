@@ -1,4 +1,5 @@
-import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
+import { ReactElement } from "react";
+import { FlatList, RefreshControl, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { StationTransactionListItem } from "@/types/transaction";
 import { StationTransactionCard } from "./station-transaction-card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ type Props = {
   onLoadMore?: () => void;
   canLoadMore?: boolean;
   onPressItem: (item: StationTransactionListItem) => void;
+  ListHeaderComponent?: ReactElement | null;
+  contentContainerStyle?: StyleProp<ViewStyle>;
 };
 
 export const StationTransactionsList = ({
@@ -19,14 +22,17 @@ export const StationTransactionsList = ({
   onRefresh,
   onLoadMore,
   canLoadMore,
-  onPressItem
+  onPressItem,
+  ListHeaderComponent,
+  contentContainerStyle
 }: Props) => {
   return (
     <FlatList
       data={items}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => <StationTransactionCard item={item} onPress={() => onPressItem(item)} />}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, contentContainerStyle]}
+      ListHeaderComponent={ListHeaderComponent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ListFooterComponent={
         canLoadMore && onLoadMore ? (

@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: 36,
     height: 36,
-    borderColor: colors.accent,
+    borderColor: colors.primary,
     borderWidth: 4
   },
   topLeft: {
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: spacing.xs,
-    color: "#E4EAF0",
+    color: "#D1FAE5",
     fontSize: typography.body,
     textAlign: "center"
   }

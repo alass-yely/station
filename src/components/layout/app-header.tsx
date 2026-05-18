@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { colors, spacing, typography } from "@/theme";
 
 type AppHeaderProps = {
@@ -11,6 +11,7 @@ export const AppHeader = ({ title, subtitle, rightSlot }: AppHeaderProps) => {
   return (
     <View style={styles.container}>
       <View style={styles.left}>
+        <Image source={require("../../../assets/Dark-version.png")} style={styles.logo} resizeMode="contain" />
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
@@ -31,7 +32,13 @@ const styles = StyleSheet.create({
     borderColor: colors.border
   },
   left: {
-    gap: 2
+    gap: 2,
+    flexShrink: 1
+  },
+  logo: {
+    width: 68,
+    height: 20,
+    marginBottom: 2
   },
   title: {
     color: colors.text,
